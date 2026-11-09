@@ -7,6 +7,10 @@ use App\View;
 
 class LancamentoController
 {
+    public function __construct()
+    {
+        \App\Auth::exigirLogin();
+    }
     public function index(): void
     {
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));

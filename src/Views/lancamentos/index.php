@@ -1,4 +1,7 @@
 <h1>Lançamentos</h1>
+<?php if (\App\Auth::podeEditar()): ?>
+    <a href="#">+ Novo lançamento</a>
+<?php endif; ?>
 
 <table>
     <thead>

@@ -4,7 +4,7 @@ namespace App;
 
 class View
 {
-    public static function render(string $view, array $dados = []): void
+    public static function render(string $view, array $dados = [], ?string $layout = 'layout'): void
     {
         extract($dados);
 
@@ -12,6 +12,11 @@ class View
         require __DIR__ . "/Views/{$view}.php";
         $conteudo = ob_get_clean();
 
-        require __DIR__ . '/Views/layout.php';
+        if ($layout === null) {
+            echo $conteudo;
+            return;
+        }
+
+        require __DIR__ . "/Views/{$layout}.php";
     }
 }

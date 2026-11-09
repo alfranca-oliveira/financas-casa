@@ -7,6 +7,11 @@ use App\View;
 
 class PainelController
 {
+    public function __construct()
+    {
+        \App\Auth::exigirLogin();
+    }
+
     public function index(): void
     {
         View::render('painel/index', [
