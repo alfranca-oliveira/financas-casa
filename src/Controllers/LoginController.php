@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Auth;
 use App\Models\Usuario;
 use App\View;
+use App\Models\Historico;
+use App\Models\TentativaLogin;
 
 class LoginController
 {
@@ -22,26 +24,46 @@ class LoginController
     {
         Auth::validarCsrf();
 
-        $email = trim($_POST['email'] ?? '');
+        $email = mb_strtolower(trim($_POST['email'] ?? ''));
         $senha = $_POST['senha'] ?? '';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'desconhecido';
+
+        if (TentativaLogin::bloqueado($email, $ip)) {
+            http_response_code(429);
+            $this->mostrarErro(
+                'Muitas tentativas de login. Aguarde ' . TentativaLogin::JANELA_MINUTOS . ' minutos e tente novamente.',
+                $email
+            );
+            return;
+        }
+
         $usuario = Usuario::buscarPorEmail($email);
 
         $senhaCorreta = $usuario !== null
             && $usuario['senha_hash'] !== null
             && password_verify($senha, $usuario['senha_hash']);
 
+        TentativaLogin::registrar($email, $ip, $senhaCorreta);
+
         if (!$senhaCorreta) {
-            View::render('login/index', [
-                'titulo' => 'Entrar',
-                'erro' => 'E-mail ou senha incorretos.',
-                'email' => $email,
-            ], null);
+            $this->mostrarErro('E-mail ou senha incorretos.', $email);
             return;
         }
 
         Auth::entrar($usuario);
+        Historico::registrar($usuario['id'], 'login', $ip);
+
         header('Location: /');
         exit;
+    }
+
+    private function mostrarErro(string $erro, string $email): void
+    {
+        View::render('login/index', [
+            'titulo' => 'Entrar',
+            'erro' => $erro,
+            'email' => $email,
+        ], null);
     }
 
     public function sair(): void
